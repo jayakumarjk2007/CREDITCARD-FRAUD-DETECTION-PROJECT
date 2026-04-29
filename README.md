@@ -1,1 +1,1 @@
-Place creditcard.csv in the project root before running the pipeline.
+Trained model artifacts will be saved here.
