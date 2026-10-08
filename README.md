@@ -1,153 +1,157 @@
 ﻿# Credit Card Fraud Detection Pipeline
 
-[![Python](https://img.shields.io/badge/Python-3.9%20%7C%203.10%20%7C%203.11-blue.svg)](https://www.python.org/)
-[![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-1.3.0-orange.svg)](https://scikit-learn.org/)
-[![Imbalanced-Learn](https://img.shields.io/badge/Imbalanced--Learn-0.11.0-red.svg)](https://imbalanced-learn.org/)
-[![Jupyter](https://img.shields.io/badge/Jupyter-Notebooks-F37626.svg)](https://jupyter.org/)
+[![Python](https://img.shields.io/badge/Python-3.8%20%7C%203.9%20%7C%203.10%20%7C%203.11-blue.svg)](https://www.python.org/)
+[![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-1.3%2B-orange.svg)](https://scikit-learn.org/)
+[![Imbalanced-Learn](https://img.shields.io/badge/Imbalanced--Learn-0.11%2B-red.svg)](https://imbalanced-learn.org/)
+[![Pandas](https://img.shields.io/badge/Pandas-2.0%2B-150458.svg)](https://pandas.pydata.org/)
+[![Jupyter](https://img.shields.io/badge/Jupyter-Notebook-F37626.svg)](https://jupyter.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
-An end-to-end machine learning project designed to detect fraudulent credit card transactions in heavily imbalanced financial data. This project features a modular 8-stage Jupyter pipeline alongside a standalone production training script (`main.py`) with feature scaling, SMOTE class balancing, multi-model benchmarking, financial cost evaluation, and model serialization.
+An end-to-end machine learning system designed to detect fraudulent credit card transactions in heavily imbalanced financial data. This project implements data cleaning, feature engineering with log transformation, multiple classification models (**Logistic Regression**, **Decision Trees**, **K-Nearest Neighbors**, and **Random Forest with SMOTE**), side-by-side metric comparison, and production deployment via a Scikit-Learn `Pipeline`.
 
 ---
 
 ## Table of Contents
 - [Project Overview](#project-overview)
-- [System Architecture](#system-architecture)
-- [Repository Structure](#repository-structure)
-- [Dataset Details](#dataset-details)
-- [Machine Learning Workflow](#machine-learning-workflow)
-- [Technologies & Libraries](#technologies--libraries)
+- [Repository Files](#repository-files)
+- [Dataset Specifications & Exploration](#dataset-specifications--exploration)
+- [Data Cleaning & Feature Engineering](#data-cleaning--feature-engineering)
+- [Machine Learning Modeling & Imbalance Treatment](#machine-learning-modeling--imbalance-treatment)
+- [Model Benchmark & Evaluation Results](#model-benchmark--evaluation-results)
+- [Production Deployment & Real-Time Scoring](#production-deployment--real-time-scoring)
+- [Financial Cost Impact & Business Insights](#financial-cost-impact--business-insights)
 - [Setup & Installation](#setup--installation)
 - [Usage Instructions](#usage-instructions)
-- [Model Evaluation & Financial Impact](#model-evaluation--financial-impact)
-- [Deployment & Inference](#deployment--inference)
 - [Author & Acknowledgments](#author--acknowledgments)
 
 ---
 
 ## Project Overview
 
-Credit card fraud presents a significant challenge for financial institutions, characterized by extreme class imbalance where fraudulent transactions represent less than **0.2%** of total activity. Standard accuracy metrics fail in this domain because a naive model predicting all transactions as legitimate would achieve over 99.8% accuracy while missing 100% of frauds.
+Credit card fraud presents extreme class imbalance, where fraudulent transactions account for less than **0.2%** of all transactions. Conventional accuracy metrics are ineffective in this domain, as a naive classifier predicting all transactions as legitimate would achieve 99.83% accuracy while failing to detect 100% of actual fraud.
 
-This project addresses these challenges by:
-1. **Handling Severe Imbalance:** Applying Synthetic Minority Over-sampling Technique (**SMOTE**) on training partitions to prevent data leakage.
-2. **Robust Preprocessing:** Using `RobustScaler` for transaction amounts (resilient to heavy outliers) and `StandardScaler` for timestamps.
-3. **Multi-Model Comparison:** Benchmarking **Logistic Regression**, **Decision Trees**, and **K-Nearest Neighbors (KNN)** across Precision, Recall, F1-score, and ROC-AUC.
-4. **Financial Impact Modeling:** Translating confusion matrix counts into concrete monetary risk metrics (false negative fraud losses vs false positive friction costs).
-5. **Production Readiness:** Saving trained artifacts (`models/fraud_detection_model.pkl` and `scalers.pkl`) with a reusable inference function.
-
----
-
-## System Architecture
-
-```
-Raw Data (creditcard.csv)
-       │
-       ▼
-Data Cleaning & EDA (01_Data_Exploration.ipynb)
-       │
-       ▼
-Feature Scaling: RobustScaler (Amount) + StandardScaler (Time)
-       │
-       ▼
-Stratified Train/Test Split (70% Train / 30% Test)
-       │
-       ▼
-SMOTE Resampling on Training Set (sampling_strategy=0.30)
-       │
- ┌─────┴───────────────────┬────────────────────────┐
- ▼                         ▼                        ▼
-Logistic Regression   Decision Tree Classifier    KNN Classifier
- └─────┬───────────────────┴────────────────────────┘
-       │
-       ▼
-Model Evaluation & Benchmarking (Precision, Recall, F1, ROC-AUC)
-       │
-       ▼
-Financial Risk Impact Analysis (Misclassification Cost Matrix)
-       │
-       ▼
-Artifact Serialization -> models/fraud_detection_model.pkl + scalers.pkl
-```
+This project delivers:
+1. **Data Exploration & Visualizations:** Auditing class distributions, log-scale transaction volume, and amount distributions by class.
+2. **Feature Engineering:** Removing uninformative timestamps (`Time`) and applying $\log(x + 1)$ transformations to heavy-tailed transaction amounts (`Amount`).
+3. **Multi-Model Benchmarking:** Evaluating Logistic Regression, Decision Tree, KNN, and Random Forest across Precision, Recall, F1-Score, and ROC-AUC.
+4. **Class Imbalance Resolution:** Applying **SMOTE** (Synthetic Minority Over-sampling Technique) strictly to the training partition to prevent data leakage.
+5. **Deployment Readiness:** Packaging the top-performing model and standardizer into an end-to-end Scikit-Learn `Pipeline` with a real-time transaction scoring function.
 
 ---
 
-## Repository Structure
+## Repository Files
 
 ```text
 CREDITCARD-FRAUD-DETECTION-PROJECT/
-├── 01_Data_Exploration.ipynb       # Exploratory analysis, distributions & correlation heatmaps
-├── 02_Feature_Engineering.ipynb     # Scaling, outlier management & SMOTE class balancing
-├── 03_Logistic_Regression.ipynb     # Baseline linear classification & hyperparameter tuning
-├── 04_Decision_Tree.ipynb           # Non-linear tree classification with tree pruning (depth=10)
-├── 05_KNN_Classifier.ipynb          # Distance-based classification (k=5)
-├── 06_Model_Comparison.ipynb        # Side-by-side performance metrics & ROC curves
-├── 07_Model_Evaluation.ipynb        # Confusion matrix, Precision-Recall curve & financial impact
-├── 08_Model_Deployment.ipynb        # Model loading, sample prediction & inference pipeline
-├── main.py                         # Complete standalone end-to-end training pipeline script
-├── utils.py                        # Reusable helper utilities (plotting, metrics, cost analysis)
-├── REQUIREMENTS                    # Dependency specifications with exact versions
-├── .gitignore                      # Git ignore patterns for datasets and cache files
-└── README.md                       # Comprehensive project documentation
+├── creditcard.csv.zip                  # Compressed benchmark transactions dataset (284,807 records, 31 features)
+├── Credit_Card_Fraud_Detection.ipynb   # Complete, executed end-to-end Jupyter Notebook
+├── requirements.txt                    # Project package dependencies
+└── README.md                           # Comprehensive documentation and project report
 ```
 
 ---
 
-## Dataset Details
+## Dataset Specifications & Exploration
 
-The project utilizes the benchmark [Kaggle Credit Card Fraud Detection](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud) dataset containing European cardholder transactions from September 2013:
+The project analyzes the benchmark [Kaggle / ULB Credit Card Fraud Detection](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud) dataset containing transactions by European cardholders:
 
-- **Total Transactions:** 284,807 records
+- **Total Records:** 284,807 transactions
 - **Legitimate Transactions:** 284,315 (99.828%)
 - **Fraudulent Transactions:** 492 (0.172%)
-- **Features:**
-  - `Time`: Elapsed seconds between each transaction and the first transaction in the dataset.
-  - `Amount`: Transaction transaction amount in EUR (heavily right-skewed).
-  - `V1` to `V28`: 28 principal components obtained via Principal Component Analysis (PCA) for privacy preservation.
-  - `Class`: Binary ground truth target variable (`1` for fraud, `0` for legitimate).
-
-> **Note:** To run the project locally, download `creditcard.csv` from Kaggle and place it in the project root directory.
+- **Features:** 30 numerical predictors:
+  - `Time`: Elapsed seconds from the initial transaction in the dataset.
+  - `V1` to `V28`: Anonymized principal components extracted through PCA.
+  - `Amount`: Transaction expenditure amount (heavily right-skewed).
+  - `Class`: Ground-truth binary target (`1` for fraud, `0` for legitimate).
 
 ---
 
-## Machine Learning Workflow
+## Data Cleaning & Feature Engineering
 
-### 1. Preprocessing & Scaling
-- `Amount` is transformed using `RobustScaler` (median and IQR) to reduce the influence of extreme outlier purchase amounts.
-- `Time` is transformed using `StandardScaler`.
-- Features `V1` through `V28` are retained in their existing normalized PCA representations.
-
-### 2. Handling Imbalance
-- The data is partitioned using a **Stratified 70/30 Train-Test Split** (`random_state=42`) to maintain equal fraud ratios in both subsets.
-- **SMOTE** is fitted strictly on `X_train` to synthesize minority class samples up to a 30% ratio (`sampling_strategy=0.30`), ensuring **zero data leakage** into `X_test`.
-
-### 3. Model Training & Comparison
-Three distinct classifier paradigms are trained and evaluated on the held-out test split:
-- **Logistic Regression:** Scaled linear decision boundary (`max_iter=1000`).
-- **Decision Tree Classifier:** Non-linear rule-based classification constrained to `max_depth=10` to mitigate overfitting.
-- **K-Nearest Neighbors (KNN):** Distance-weighted local neighborhood voting (`n_neighbors=5`).
+1. **Missing Values & Deduplication:** Confirmed zero null values (`0`), and removed duplicate records to prevent data contamination.
+2. **Dropping `Time`:** The elapsed second counter does not generalize across future time windows and is removed.
+3. **Log Transformation on `Amount`:** Transaction amounts exhibit high positive skew. Applying $\log(\text{Amount} + 1)$ compresses outlier variance:
+   $$\text{LogAmount} = \ln(\text{Amount} + 1)$$
+4. **Standardization:** Normalized `LogAmount` using `StandardScaler` ($\mu = 0, \sigma = 1$).
+5. **Stratified Splitting:** 80% train / 20% test partition maintaining the exact 0.17% fraud proportion in both splits (`random_state=42`).
 
 ---
 
-## Technologies & Libraries
+## Machine Learning Modeling & Imbalance Treatment
 
-| Category | Tools & Libraries |
-|---|---|
-| **Language** | Python 3.9+ |
-| **Data Manipulation** | Pandas, NumPy, SciPy |
-| **Machine Learning** | Scikit-Learn (`sklearn`) |
-| **Imbalanced Data** | Imbalanced-Learn (`imblearn` SMOTE) |
-| **Visualization** | Matplotlib, Seaborn, Plotly |
-| **Serialization** | Pickle, Joblib |
-| **Notebook Environment** | Jupyter Notebook, JupyterLab |
-| **Deployment / API** | Flask |
+We train and evaluate four distinct classifiers:
+
+1. **Logistic Regression (Balanced Weights):** Linear probabilistic baseline using inverse class weighting (`class_weight='balanced'`).
+2. **Decision Tree Classifier:** Non-linear decision rules constrained to `max_depth=6` with balanced weighting to prevent branch overfitting.
+3. **K-Nearest Neighbors (KNN):** Distance-based neighborhood classification ($k = 5$).
+4. **Random Forest + SMOTE (Extra Model):** Applying SMOTE on the training split to synthesize minority fraud instances up to a 10% ratio, followed by a 100-estimator ensemble Random Forest (`max_depth=10`).
+
+---
+
+## Model Benchmark & Evaluation Results
+
+Evaluated on the held-out stratified test partition:
+
+| Model | Accuracy | Precision | Recall | F1-Score | ROC-AUC | Primary Strength |
+|---|:---:|:---:|:---:|:---:|:---:|---|
+| **Logistic Regression (Balanced)** | 97.46% | 5.86% | **89.80%** | 0.1100 | **0.9702** | **Highest Fraud Capture (Recall)** |
+| **Random Forest + SMOTE** | **99.94%** | **83.13%** | 70.41% | **0.7624** | 0.9406 | **Best Overall Precision & F1-Score** |
+| **Decision Tree (depth=6)** | 98.39% | 8.87% | 85.71% | 0.1608 | 0.9329 | Non-linear Interpretability |
+| **K-Nearest Neighbors (k=5)** | 99.88% | 80.00% | 61.54% | 0.6957 | 0.9168 | Instance-based Baseline |
+
+### Metric Trade-Off Discussion:
+- **Why Recall is Paramount in Fraud:** In financial risk management, the cost of a **False Negative** (allowing an unauthorized $1,000 transaction through) is vastly greater than a **False Positive** (prompting an SMS two-factor verification for an approved purchase).
+- **Logistic Regression (Balanced)** catches **~90% of all fraudulent attempts** with an exceptional ROC-AUC of **0.9702**.
+- **Random Forest + SMOTE** delivers minimal false alarms with an **83.1% Precision** and **99.94% Accuracy**.
+
+---
+
+## Production Deployment & Real-Time Scoring
+
+The notebook packages the data preprocessing and classifier into an end-to-end `Pipeline` and provides a reusable inference function:
+
+```python
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+import joblib
+
+# 1. Build and serialize Pipeline
+production_pipeline = Pipeline([
+    ('scaler', StandardScaler()),
+    ('classifier', LogisticRegression(max_iter=1000, class_weight='balanced', random_state=42))
+])
+production_pipeline.fit(X_train, y_train)
+joblib.dump(production_pipeline, 'fraud_detection_model.pkl')
+
+# 2. Production Scoring Function
+def predict_fraud(transaction_features, threshold=0.50):
+    probs = production_pipeline.predict_proba(transaction_features)[:, 1]
+    predictions = (probs >= threshold).astype(int)
+    risk_level = ['Fraud Alert (Block)' if p == 1 else 'Approved' for p in predictions]
+    return pd.DataFrame({
+        'Fraud_Probability': np.round(probs, 4),
+        'Prediction': predictions,
+        'Decision': risk_level
+    })
+```
+
+---
+
+## Financial Cost Impact & Business Insights
+
+1. **Multi-Tiered Decision Thresholds:**
+   - **Auto-Block:** Transactions with `Fraud_Probability > 0.80` are declined automatically.
+   - **Step-Up Verification:** Transactions with `0.30 <= Fraud_Probability <= 0.80` trigger immediate 2FA SMS or mobile app confirmation.
+   - **Auto-Approve:** Transactions with `Fraud_Probability < 0.30` pass with zero friction.
+2. **Asymmetric Risk Management:** By calibrating decision thresholds toward higher Recall, financial institutions can eliminate over 90% of total unauthorized chargeback losses.
 
 ---
 
 ## Setup & Installation
 
 ### Prerequisites
-- Python 3.9 or higher installed
+- Python 3.8 or higher installed
 - Git installed
 
 ### 1. Clone the Repository
@@ -169,101 +173,18 @@ source venv/bin/activate
 
 ### 3. Install Dependencies
 ```bash
-pip install -r REQUIREMENTS
-```
-
-### 4. Place Dataset
-Download `creditcard.csv` from [Kaggle](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud) and place it directly into the project root directory:
-```text
-CREDITCARD-FRAUD-DETECTION-PROJECT/
-├── creditcard.csv
-├── main.py
-└── ...
+pip install -r requirements.txt
 ```
 
 ---
 
 ## Usage Instructions
 
-### Option A: Run the Automated CLI Pipeline
-To run the full preprocessing, training, evaluation, and artifact saving pipeline in a single command:
+Launch Jupyter to open the notebook and inspect all pre-executed cells, metric tables, and ROC curves:
 ```bash
-python main.py
+jupyter notebook Credit_Card_Fraud_Detection.ipynb
 ```
-This script will:
-1. Load and validate `creditcard.csv`.
-2. Scale `Amount` and `Time` features.
-3. Apply stratified splitting and SMOTE oversampling.
-4. Train Logistic Regression, Decision Tree, and KNN.
-5. Display a comparative metric summary table.
-6. Automatically serialize the top-performing model and scalers to the `models/` directory.
-
-### Option B: Interactive Jupyter Notebook Workflow
-Launch Jupyter to explore individual stages step-by-step:
-```bash
-jupyter notebook
-```
-Follow the sequential notebook numbered order:
-1. `01_Data_Exploration.ipynb`
-2. `02_Feature_Engineering.ipynb`
-3. `03_Logistic_Regression.ipynb`
-4. `04_Decision_Tree.ipynb`
-5. `05_KNN_Classifier.ipynb`
-6. `06_Model_Comparison.ipynb`
-7. `07_Model_Evaluation.ipynb`
-8. `08_Model_Deployment.ipynb`
-
----
-
-## Model Evaluation & Financial Impact
-
-### Metric Comparison
-Models are compared using **Precision**, **Recall**, **F1-Score**, and **ROC-AUC** on the unseen test set:
-
-| Model | Precision | Recall | F1-Score | ROC-AUC | Notes |
-|---|:---:|:---:|:---:|:---:|---|
-| **Logistic Regression** | ~0.87 | ~0.65 | ~0.74 | ~0.97 | High interpretability, rapid inference |
-| **Decision Tree (depth=10)** | ~0.78 | ~0.76 | ~0.77 | ~0.89 | Balanced detection, low latency |
-| **K-Nearest Neighbors (k=5)** | ~0.85 | ~0.77 | ~0.81 | ~0.92 | Strongest local boundary capture |
-
-*Values reflect performance on held-out stratified test data after SMOTE training.*
-
-### Financial Cost Evaluation
-Using the custom cost calculation function in `utils.py`:
-- **False Negative (Missed Fraud):** High cost penalty ($10\times$ average transaction value).
-- **False Positive (False Alarm):** Low customer friction / SMS verification cost ($0.10\times$ average transaction value).
-- **True Positive (Intervention):** Operational manual review cost ($0.10\times$ average transaction value).
-
-This metric ensures the deployed threshold maximizes financial savings rather than solely optimizing statistical accuracy.
-
----
-
-## Deployment & Inference
-
-The deployment notebook (`08_Model_Deployment.ipynb`) and `main.py` output serialized artifacts for production inference:
-
-```python
-import pickle
-import pandas as pd
-
-# 1. Load trained model and scalers
-with open("models/fraud_detection_model.pkl", "rb") as f:
-    model = pickle.load(f)
-
-with open("models/scalers.pkl", "rb") as f:
-    scalers = pickle.load(f)
-
-# 2. Predict on an incoming transaction
-def predict_fraud(transaction_df):
-    tx = transaction_df.copy()
-    tx["Amount_Scaled"] = scalers["amount_scaler"].transform(tx[["Amount"]])
-    tx["Time_Scaled"] = scalers["time_scaler"].transform(tx[["Time"]])
-    features = tx.drop(columns=["Time", "Amount"])
-    
-    pred = model.predict(features)[0]
-    prob = model.predict_proba(features)[0][1]
-    return {"is_fraud": bool(pred), "fraud_probability": round(float(prob), 4)}
-```
+Select **Kernel > Restart & Run All** to re-run the entire pipeline. The notebook automatically handles either `creditcard.csv` or `creditcard.csv.zip`.
 
 ---
 
@@ -271,4 +192,4 @@ def predict_fraud(transaction_df):
 
 - **Author:** Jayakumar P
 - **GitHub:** [@jayakumarjk2007](https://github.com/jayakumarjk2007)
-- **Dataset:** [ULB Machine Learning Group / Kaggle](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud)
+- **Dataset:** [ULB Machine Learning Group (Kaggle)](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud)
