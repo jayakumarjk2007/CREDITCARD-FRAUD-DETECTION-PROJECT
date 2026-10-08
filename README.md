@@ -1,148 +1,113 @@
 # Credit Card Fraud Detection System
 
-> **High-Performance Machine Learning System for Real-Time Financial Fraud Detection on Imbalanced Transaction Streams.**
+A machine learning system for real-time financial fraud detection on imbalanced transaction streams.
 
 ---
 
-## 📌 Executive Summary
+## Executive Summary
 
-Credit card fraud poses a multi-billion dollar threat to financial institutions worldwide. This repository contains an end-to-end, production-grade **Credit Card Fraud Detection System** developed using real-world transaction data.
+Credit card fraud poses a multi-billion dollar threat to financial institutions worldwide. This repository contains a production-grade Credit Card Fraud Detection System developed using real-world transaction data.
 
-The project addresses the fundamental challenge in financial fraud detection: **extreme class imbalance** (only **492 frauds** out of **284,807 transactions**, or **0.172%**). Through rigorous exploratory data analysis, domain-driven feature engineering, cost-sensitive learning, and synthetic minority over-sampling (SMOTE), the system achieves exceptional fraud recall while minimizing customer friction from false positives.
+The project addresses the fundamental challenge in financial fraud detection: extreme class imbalance (only 492 frauds out of 284,807 transactions, or 0.172%). Through exploratory data analysis, domain-driven feature engineering, cost-sensitive learning, and synthetic minority over-sampling (SMOTE), the system achieves high fraud recall while minimizing false positive alerts.
 
 ---
 
-## 📂 Project Structure & Modular Notebooks
+## Project Structure and Modular Notebooks
 
-The project is structured into 9 modular, self-contained notebooks mirroring the production machine learning lifecycle:
+The pipeline is organized in sequential order (01 through 09):
 
 ```text
 CREDITCARD-FRAUD-DETECTION-PROJECT/
-├── Code/                                                   # Core module implementations
-│   ├── Data_Exploration_and_Visualization.ipynb            # Module 1: Comprehensive EDA & Class Imbalance Analysis
-│   ├── Feature_Engineering.ipynb                           # Module 2: Skewness Correction, Log Transform & Outlier Treatment
-│   ├── Credit Card Fraud Detection - Logistic Regression.ipynb # Module 3: Cost-Sensitive Logistic Regression & Threshold Tuning
-│   ├── Credit Card Fraud Detection - Decision Tree.ipynb   # Module 4: Constrained Decision Tree & Rule Extraction
-│   ├── Credit Card Fraud Detection - K-Nearest Neighbor.ipynb # Module 5: Scaled Distance-Based Instance Classification
-│   ├── credit-card-fraud-prediction-rf-smote.ipynb        # Module 6: Random Forest Ensemble with SMOTE Oversampling
-│   ├── Model_Comparison.ipynb                              # Module 7: Unified Benchmark (PR-AUC, ROC-AUC, F1, Latency)
-│   ├── Model_evaluation.ipynb                              # Module 8: Financial Cost Matrix, Calibration & K-Fold CV
-│   ├── Model_deployment.ipynb                              # Module 9: Scikit-learn Pipeline Serialization & FastAPI Spec
-│   ├── fraud_detection_model.pkl                          # Trained & serialized production pipeline
-│   └── scaler.pkl                                          # Serialized feature standardizer
-├── creditcard.csv                                          # Complete transaction dataset (284,807 rows, 31 features)
-├── creditcard.csv.zip                                      # Compressed dataset for portable distribution
-├── README.md                                               # Technical documentation & project report
-└── requirements.txt                                        # Python dependencies
+|-- Code/                                                        # Sequential module implementations
+|   |-- 01_Data_Exploration_and_Visualization.ipynb              # Module 1: EDA and Class Imbalance Analysis
+|   |-- 02_Feature_Engineering.ipynb                             # Module 2: Skewness Correction and Scaling
+|   |-- 03_Credit_Card_Fraud_Detection_Logistic_Regression.ipynb # Module 3: Balanced Logistic Regression
+|   |-- 04_Credit_Card_Fraud_Detection_Decision_Tree.ipynb       # Module 4: Constrained Decision Tree
+|   |-- 05_Credit_Card_Fraud_Detection_K_Nearest_Neighbor.ipynb  # Module 5: Scaled Distance-Based Classification
+|   |-- 06_Credit_Card_Fraud_Prediction_RF_SMOTE.ipynb           # Module 6: Random Forest Ensemble with SMOTE
+|   |-- 07_Model_Comparison.ipynb                                # Module 7: Unified Benchmark Evaluation
+|   |-- 08_Model_Evaluation.ipynb                                # Module 8: Business Cost Matrix and Calibration
+|   |-- 09_Model_Deployment.ipynb                                # Module 9: Pipeline Inference and Latency
+|-- creditcard.csv                                               # Complete dataset (284,807 rows, 31 features)
+|-- creditcard.csv.zip                                           # Compressed dataset archive
+|-- README.md                                                    # Project documentation
+`-- requirements.txt                                             # Dependencies
 ```
 
 ---
 
-## 📊 Dataset Overview
+## Dataset Overview
 
-- **Source:** European cardholder credit card transactions (September 2013).
-- **Total Transactions:** 284,807
-- **Total Legitimate:** 284,315 (99.828%)
-- **Total Fraudulent:** 492 (0.172%)
-- **Features:** 31 total
-  - `Time`: Elapsed seconds since the first transaction in the dataset.
-  - `V1` – `V28`: Principal components obtained via PCA (anonymized for user confidentiality).
-  - `Amount`: Transaction amount in Euros/Dollars.
-  - `Class`: Target variable (`0 = Legitimate`, `1 = Fraudulent`).
+- Source: European cardholder credit card transactions
+- Total Transactions: 284,807
+- Legitimate Transactions: 284,315 (99.828%)
+- Fraudulent Transactions: 492 (0.172%)
+- Total Features: 31
+  - Time: Elapsed seconds since the first transaction
+  - V1 through V28: Principal components obtained via PCA
+  - Amount: Transaction monetary amount
+  - Class: Target variable (0 = Legitimate, 1 = Fraudulent)
 
 ---
 
-## 🔬 Methodology & Workflow
+## Methodology and Workflow
 
-### 1. Exploratory Data Analysis & Visualization (`Data_Exploration_and_Visualization.ipynb`)
+### 1. Exploratory Data Analysis (01_Data_Exploration_and_Visualization.ipynb)
 - Quantified the 578:1 class imbalance ratio.
-- Identified that transaction `Amount` exhibits extreme positive skewness, with fraud transactions having higher variance and distinct amount clusterings.
-- Analyzed transaction timing across the 48-hour recording window, highlighting time-of-day fraud activity spikes.
-- Correlation analysis identified key fraud discriminators: `V14`, `V12`, `V10`, and `V17` exhibit significant negative shifts during fraud, whereas `V4` and `V11` show strong positive shifts.
+- Analyzed transaction Amount distributions showing heavy right-skewness.
+- Analyzed Time feature showing cyclical patterns over 48 hours.
+- Evaluated correlation matrix showing strong negative signals in V14, V12, V10, V17 and positive signals in V4, V11.
 
-### 2. Feature Engineering & Preprocessing (`Feature_Engineering.ipynb`)
-- **Time Feature Removal:** Dropped `Time` to prevent temporal overfitting and spurious sequence memorization.
-- **Log Transformation:** Applied y = log(1 + x) (`np.log1p`) to compress the extreme right skew of transaction `Amount`.
-- **Feature Scaling:** Applied `StandardScaler` to ensure zero-mean, unit-variance inputs across all features.
-- **Outlier Analysis:** Used the Interquartile Range (IQR) method to examine extreme feature anomalies in the training split.
-- **Stratified Partitioning:** Implemented 80/20 stratified splitting preserving the exact 0.172% fraud prevalence across both sets.
+### 2. Feature Engineering (02_Feature_Engineering.ipynb)
+- Dropped Time column to prevent sequence memorization.
+- Applied log transformation (np.log1p) on transaction Amount.
+- Standardized features with StandardScaler.
+- Examined outlier boundaries using the Interquartile Range (IQR) method.
+- Established an 80/20 stratified split preserving class ratios.
 
-### 3. Model Training & Comparison (`Model_Comparison.ipynb`)
+### 3. Model Benchmark and Comparison (07_Model_Comparison.ipynb)
 
-Four diverse classification architectures were implemented and systematically evaluated on the identical stratified test set:
+All models were evaluated on the same stratified test set:
 
 | Architecture | Strategy / Hyperparameters | Fraud Recall | Precision | F1-Score | ROC-AUC | PR-AUC |
 |---|---|:---:|:---:|:---:|:---:|:---:|
-| **Random Forest + SMOTE** | 100 Trees, Depth 10, SMOTE 50/50 | **85.7%** | **86.6%** | **0.861** | **0.978** | **0.865** |
-| **Logistic Regression (Balanced)** | `class_weight='balanced'`, lbfgs | **91.8%** | 6.8% | 0.127 | 0.974 | 0.748 |
-| **Decision Tree (Pruned)** | Depth 5, `min_samples_split=50` | 87.8% | 34.5% | 0.496 | 0.941 | 0.612 |
-| **K-Nearest Neighbors** | k=5, Minkowski metric | 84.7% | 46.2% | 0.597 | 0.943 | 0.639 |
+| Random Forest + SMOTE | 100 Trees, Depth 10, SMOTE 50/50 | 85.7% | 86.6% | 0.861 | 0.978 | 0.865 |
+| Logistic Regression (Balanced) | class_weight='balanced', lbfgs | 91.8% | 6.8% | 0.127 | 0.974 | 0.748 |
+| Decision Tree (Pruned) | Depth 5, min_samples_split=50 | 87.8% | 34.5% | 0.496 | 0.941 | 0.612 |
+| K-Nearest Neighbors | k=5, Minkowski distance | 84.7% | 46.2% | 0.597 | 0.943 | 0.639 |
 
 ### 4. Key Performance Insights
-1. **Precision-Recall AUC is Paramount:** Due to severe class imbalance, ROC-AUC is overly optimistic (all models achieve > 0.94). PR-AUC and F1-score represent the true operational capability.
-2. **Random Forest + SMOTE** delivers the highest balanced performance (F1 = 0.861) with high precision (minimal false alarms) and strong recall.
-3. **Balanced Logistic Regression** achieves the highest raw recall (**91.8%**), making it the optimal first-line screening filter in high-throughput transaction gateways.
+1. Due to extreme imbalance, Precision-Recall AUC (PR-AUC) and F1-Score are the primary evaluation metrics.
+2. Random Forest combined with SMOTE achieved the highest balanced performance (F1 = 0.861).
+3. Balanced Logistic Regression achieved the highest fraud recall (91.8%), making it effective for low-latency screening.
 
 ---
 
-## 💼 Business Impact & Cost Optimization
+## Business Cost Optimization (08_Model_Evaluation.ipynb)
 
-In production banking systems, prediction errors carry asymmetric financial costs:
-- **False Negative (Missed Fraud):** Direct loss of stolen funds (Average fraud amount: **~$122.00**).
-- **False Positive (False Alarm):** Customer friction, automated SMS/2FA, or support verification call cost (**~$5.00**).
+Financial institutions incur asymmetric costs on classification errors:
+- False Negative (Missed Fraud): Direct financial loss (~$122.00 average fraud amount).
+- False Positive (False Alarm): Operational and customer friction cost (~$5.00).
 
-Through **threshold optimization** in `Model_evaluation.ipynb`, shifting the decision boundary from default 0.50 down to optimal **0.28 - 0.35**:
-- Reduces total financial loss by over **42%** compared to uncalibrated baselines.
-- Catches >94% of fraudulent transactions while maintaining a false alarm rate under 0.5%.
+Threshold optimization reveals an optimal operating threshold between 0.28 and 0.35, minimizing total financial loss while detecting over 94% of fraud attempts.
 
 ---
 
-## 🚀 Deployment & Real-Time Inference (`Model_deployment.ipynb`)
+## Deployment and Inference (09_Model_Deployment.ipynb)
 
-The model is serialized into standard production artifacts:
-- `fraud_detection_model.pkl`: Complete end-to-end Scikit-learn Pipeline (StandardScaler + Logistic Regression / Classifier).
-- `scaler.pkl`: Standalone pre-fitted standardizer.
+A Scikit-learn Pipeline processes raw transaction inputs and outputs fraud probabilities in real time:
 
-### Python Quickstart: Real-Time Transaction Scoring
-
-```python
-import joblib
-import pandas as pd
-
-# Load serialized pipeline
-pipeline = joblib.load("fraud_detection_model.pkl")
-
-# Incoming transaction dictionary
-transaction = {
-    "Time": 406.0,
-    "V1": -2.31, "V2": 1.95, "V3": -1.61, "V4": 3.99,
-    "V5": -0.52, "V6": -1.42, "V7": -2.53, "V8": 1.39,
-    # ... V9 to V28
-    "Amount": 149.62
-}
-
-df_tx = pd.DataFrame([transaction])
-fraud_probability = pipeline.predict_proba(df_tx)[0, 1]
-
-if fraud_probability >= 0.5:
-    print(f"🚨 FRAUD ALERT! Probability: {fraud_probability:.2%}")
-else:
-    print(f"✅ Approved. Probability: {fraud_probability:.2%}")
-```
-
-### SLA Latency Benchmark:
-- **Inference Time:** `< 0.35 ms` per transaction.
-- **Throughput:** `> 3,000` transactions/second on standard CPU.
+- Inference Latency: Under 0.35 ms per transaction
+- Throughput: Exceeds 3,000 transactions per second on CPU
+- Decision Categories:
+  - Probability < 0.20: Low Risk (Approve)
+  - Probability 0.20 to 0.60: Medium Risk (2FA Challenge)
+  - Probability >= 0.60: Critical Risk (Block Transaction)
 
 ---
 
-## 🛠️ Installation & Setup
+## Installation and Setup
 
-### Prerequisites
-- Python 3.10+
-- Jupyter Notebook or VS Code Jupyter Extension
-
-### Setup Instructions
 ```bash
 # 1. Clone repository
 git clone https://github.com/jayakumarjk2007/CREDITCARD-FRAUD-DETECTION-PROJECT.git
@@ -157,22 +122,18 @@ jupyter notebook
 
 ---
 
-## 📜 Requirements (`requirements.txt`)
+## Dependencies (requirements.txt)
 
-```text
-pandas>=2.0.0
-numpy>=1.24.0
-matplotlib>=3.7.0
-seaborn>=0.12.0
-scikit-learn>=1.3.0
-imbalanced-learn>=0.11.0
-joblib>=1.3.0
-jupyter>=1.0.0
-```
+- pandas>=2.0.0
+- numpy>=1.24.0
+- matplotlib>=3.7.0
+- seaborn>=0.12.0
+- scikit-learn>=1.3.0
+- imbalanced-learn>=0.11.0
+- jupyter>=1.0.0
 
 ---
 
-## 👨‍💻 Author & Acknowledgments
-- **Author:** Jayakumar P
-- **Course:** GUVI Data Science & Machine Learning Program
-- **Dataset:** European Cardholder Fraud Dataset (Credit Card Fraud Detection)
+## Author
+- Jayakumar P
+- Credit Card Fraud Detection Project
